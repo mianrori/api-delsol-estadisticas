@@ -40,7 +40,7 @@ COPY --from=builder /app ./
 # PM2 global
 RUN npm install pm2 -g
 
-EXPOSE 5301
+EXPOSE 5304
 
 # pm2-runtime es el modo especial para Docker (mantiene señales SIGINT/SIGTERM)
 CMD ["pm2-runtime", "ecosystem.config.cjs","--env", "production"]
