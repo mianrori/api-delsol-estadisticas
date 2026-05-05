@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    container_name: api-delsol-estadisticas
+    restart: unless-stopped
+    ports:
+      - "5304:5304"
+
+    environment:
+      - NODE_ENV=production
+
+    volumes:
+      - ./logs:/app/logs
