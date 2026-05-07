@@ -1,6 +1,7 @@
 import { pool } from "../database/postgresql/connection.postgresql.database.js";
 import { connect } from "../database/oracle/connection.oracle.database.js";
 import { config } from "../../config.js";
+import { constante } from "../helpers/constantes.helper.js";
 
 let dbPgConnection;
 
@@ -124,7 +125,7 @@ export const actualizarEstadoSifenOracle = async (payload) => {
   try {
     const data = JSON.parse(payload);
 
-    if (data.tipo_de === 1) {
+    if (data.tipo_de === constante.FACTURA) {
       dbOracleConnection = await connect(
         config.dbUserOracle,
         config.dbPasswordOracle,
@@ -145,8 +146,27 @@ export const actualizarEstadoSifenOracle = async (payload) => {
         },
         { autoCommit: true },
       );
-    } else {
-      return;
+    } else if (data.tipo_de === constante.NOTA_CREDITO) {
+      dbOracleConnection = await connect(
+        config.dbUserOracle,
+        config.dbPasswordOracle,
+      );
+
+      await dbOracleConnection.execute(
+        `
+      UPDATE cc_notas_debcred a
+         SET a.estado_sifen = :estado_nuevo,
+             a.fec_estado = SYSDATE,
+             a.id_de=:id
+       WHERE a.cdc = :cdc
+      `,
+        {
+          estado_nuevo: data.estado_nuevo,
+          cdc: data.cdc,
+          id: data.id,
+        },
+        { autoCommit: true },
+      );
     }
   } catch (err) {
     console.error("Error actualizando en actualizarEstadoSifenOracle:", err);
@@ -171,7 +191,7 @@ export const actualizarEstadoGeneracionOracle = async (payload) => {
   try {
     const data = JSON.parse(payload);
 
-    if (data.tipo_de === 1) {
+    if (data.tipo_de === constante.FACTURA) {
       dbOracleConnection = await connect(
         config.dbUserOracle,
         config.dbPasswordOracle,
@@ -200,8 +220,35 @@ export const actualizarEstadoGeneracionOracle = async (payload) => {
         },
         { autoCommit: true },
       );
-    } else {
-      return;
+    } else if (data.tipo_de === constante.NOTA_CREDITO) {
+      dbOracleConnection = await connect(
+        config.dbUserOracle,
+        config.dbPasswordOracle,
+      );
+
+      await dbOracleConnection.execute(
+        `
+      UPDATE cc_notas_debcred a
+         SET a.estado_generacion = :estado_nuevo,
+             a.fec_estado = SYSDATE,
+             a.id_de=:id
+       WHERE (SELECT nvl(m.establecimiento, '001') || '-' ||
+                               nvl(m.punto_expedicion, '001')
+                          FROM talonarios m
+                         WHERE m.cod_empresa = a.cod_empresa
+                           AND m.tip_talonario = a.tip_comprobante
+                           AND m.serie = a.ser_comprobante
+                           AND a.nro_comprobante BETWEEN m.numero_inicial AND
+                               m.numero_final) || '-' ||
+                       lpad(a.nro_comprobante, 7, '0') = :numero
+      `,
+        {
+          estado_nuevo: data.estado_nuevo,
+          numero: data.numero,
+          id: data.id,
+        },
+        { autoCommit: true },
+      );
     }
   } catch (err) {
     console.error(
