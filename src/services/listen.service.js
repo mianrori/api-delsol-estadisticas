@@ -156,7 +156,6 @@ export const actualizarEstadoSifenOracle = async (payload) => {
         `
       UPDATE cc_notas_debcred a
          SET a.estado_sifen = :estado_nuevo,
-             a.fec_estado = SYSDATE,
              a.id_de=:id
        WHERE a.cdc = :cdc
       `,
@@ -201,7 +200,6 @@ export const actualizarEstadoGeneracionOracle = async (payload) => {
         `
       UPDATE vt_comprobantes_cabecera a
          SET a.estado_generacion = :estado_nuevo,
-             a.fec_estado = SYSDATE,
              a.id_de=:id
        WHERE (SELECT nvl(m.establecimiento, '001') || '-' ||
                                nvl(m.punto_expedicion, '001')
